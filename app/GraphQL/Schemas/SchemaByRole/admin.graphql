@@ -1,0 +1,36 @@
+scalar JsonScalar
+
+scalar DateTimeScalar
+
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+type Query {
+    BookAll: [Book]
+    BookById(id: Int!): Book
+}
+
+type Mutation {
+    BookInsert(
+        name: String
+        author: String
+        releaseYear: Int
+        genre: String
+        description: String
+    ): Book!
+
+    BookUpdate(
+        id: Int!
+        name: String
+        author: String
+        releaseYear: Int
+        genre: String
+        description: String
+    ): Book!
+
+    BookRemove(
+        id: Int!
+    ): Book!
+}
