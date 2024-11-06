@@ -1,0 +1,100 @@
+#
+# WARNING: it is CRITICAL that this file & directory are NOT accessible directly via a web browser!
+# https://nette.org/security-warning
+#
+includes:
+    - services.neon
+
+parameters:
+    graphql:
+        defaultLangId: 1
+        maxDepth: 10
+        maxComplexity: 100000
+        apiKeyName: 'apiKey'
+
+application:
+	errorPresenter: Error
+	scanComposer: true
+	scanFilter: Presenter
+	scanDirs: false
+	debugger: true
+	mapping:
+		*: App\*Module\Presenters\*Presenter
+
+
+session:
+	expiration: 14 days
+	debugger: true
+	autoStart: true
+
+extensions:
+    console: Contributte\Console\DI\ConsoleExtension(%consoleMode%)
+    console.extra: Contributte\Console\Extra\DI\ConsoleBridgesExtension(%consoleMode%)
+
+    # Nettrine
+    nettrine.annotations: Nettrine\Annotations\DI\AnnotationsExtension
+    nettrine.cache: Nettrine\Cache\DI\CacheExtension
+    nettrine.migrations: Nettrine\Migrations\DI\MigrationsExtension
+    nettrine.fixtures: Nettrine\Fixtures\DI\FixturesExtension
+
+    # Dbal
+    nettrine.dbal: Nettrine\DBAL\DI\DbalExtension
+    nettrine.dbal.console: Nettrine\DBAL\DI\DbalConsoleExtension(%consoleMode%)
+
+    # Orm
+    nettrine.orm: Nettrine\ORM\DI\OrmExtension
+    nettrine.orm.cache: Nettrine\ORM\DI\OrmCacheExtension
+    nettrine.orm.console: Nettrine\ORM\DI\OrmConsoleExtension
+    nettrine.orm.attributes: Nettrine\ORM\DI\OrmAttributesExtension
+    nettrine.orm.annotations: Nettrine\ORM\DI\OrmAnnotationsExtension
+
+console:
+    name: Nette doctrine
+    version: '0.1'
+    url: http://example.domain.org
+
+nettrine.dbal:
+    debug:
+        panel: %debugMode%
+    connection:
+        driver: %database.driver%
+        host: %database.host%
+        user: %database.user%
+        password: %database.password%
+        dbname: %database.dbname%
+        port: %database.port%
+        serverVersion: %database.serverVersion%
+
+nettrine.orm:
+	entityManagerDecoratorClass: App\Model\Database\EntityManager
+	configuration:
+		autoGenerateProxyClasses: %debugMode%
+
+nettrine.orm.attributes:
+  mapping:
+      App\Model\Database: %appDir%/Model/Database
+
+nettrine.orm.annotations:
+    mapping:
+        App\Model\Database\Entity: %appDir%/Model/Database/Entity
+
+nettrine.orm.cache:
+
+nettrine.cache:
+#	driver: Doctrine\Common\Cache\ApcuCache
+
+nettrine.migrations:
+	table: doctrine_migrations
+	column: version
+	directory: %rootDir%/app/Model/Database/Migrations
+	namespace: App\Model\Database\Migrations
+	versionsOrganization: null
+
+
+services:
+    router: App\Router\RouterFactory::createRouter
+
+di:
+    export:
+        parameters: false
+        tags: false

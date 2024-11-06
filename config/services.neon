@@ -1,0 +1,10 @@
+services:
+    # GraphQL
+    - App\GraphQL\Schema
+    - App\Presenters\GraphqlPresenter
+
+    # GraphQL resolvers
+    - App\GraphQL\Resolvers\BookResolver
+
+    graphqlConfig:
+        factory: App\GraphQL\GraphqlConfig(@Nette\Http\Request, %graphql.maxDepth%, %graphql.maxComplexity%, %graphql.defaultQuery%,%graphql.apiKeyName%, %graphql.guestSchemaName%, %graphql.tokens%, %graphql.defaultLangId%)

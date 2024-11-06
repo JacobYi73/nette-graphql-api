@@ -1,0 +1,16 @@
+# you need to set the database parameters from the perspective of php-fpm docker container
+parameters:
+    database:
+        driver: 'pdo_mysql'
+        host: 'mysql'
+        dbname: 'graphql'
+        user: 'graphql'
+        password: '123456'
+        port: '3306'
+        serverVersion: 9.1.0
+
+    graphql:
+        defaultQuery: '{BookById(id:1) { id name }}'
+        guestSchemaName: 'admin'
+        tokens:
+            admin:  'TOKEN_ADMIN_TEST'
