@@ -209,6 +209,8 @@ This directory contains the business logic and data layer, including exception h
 The following commands ensure code quality:
 
 - **Static Analysis**: `composer phpstan`
+- **PHP Code Sniffer**: `composer phpcs`
+- **PHP Code Beautifier and Fixer**: `composer phpcbf`
 - **Unit tests**: `composer tester`
 
 ## Production
