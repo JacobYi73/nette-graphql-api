@@ -11,15 +11,16 @@ use Nettrine\ORM\EntityManagerDecorator;
 
 class EntityManager extends EntityManagerDecorator
 {
-    public function __construct(EntityManagerInterface $wrapped)
-    {
-        parent::__construct($wrapped);
-    }
+	public function __construct(EntityManagerInterface $wrapped)
+	{
+		parent::__construct($wrapped);
+	}
 
-    public function getBookRepository(): BookRepository
-    {
-        $repo = $this->getRepository(Book::class);
-        assert($repo instanceof BookRepository);
-        return $repo;
-    }
+	public function getBookRepository(): BookRepository
+	{
+		$repo = $this->getRepository(Book::class);
+		\assert($repo instanceof BookRepository);
+
+		return $repo;
+	}
 }

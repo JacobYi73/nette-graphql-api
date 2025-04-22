@@ -9,13 +9,14 @@ use Nette\Application\Routers\RouteList;
 
 final class RouterFactory
 {
-    use Nette\StaticClass;
+	use Nette\StaticClass;
 
-    public static function createRouter(): RouteList
-    {
-        $router = new RouteList();
+	public static function createRouter(): RouteList
+	{
+		$router = new RouteList();
 
-        $router->addRoute('graphql', 'Graphql:default');
-        return $router;
-    }
+		$router->addRoute('graphql', 'Graphql:default');
+
+		return $router;
+	}
 }

@@ -11,14 +11,13 @@ use Nette;
  */
 abstract class BasePresenter extends Nette\Application\UI\Presenter
 {
+	public function __construct()
+	{
+		parent::__construct();
+	}
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
-    protected function startup(): void
-    {
-        parent::startup();
-    }
+	protected function startup(): void
+	{
+		parent::startup();
+	}
 }

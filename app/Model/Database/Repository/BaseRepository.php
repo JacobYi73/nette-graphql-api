@@ -23,504 +23,575 @@ use Doctrine\Persistence\ObjectRepository;
 
 abstract class BaseRepository extends EntityRepository implements ObjectRepository
 {
-    const SEPARATOR_ALIAS = '__';
+	private const SEPARATOR_ALIAS = '__';
 
-    /** @var ClassMetadata */
-    protected ClassMetadata $classMetadata;
+	/** @var ClassMetadata */
+	protected ClassMetadata $classMetadata;
 
-    private EntityManagerInterface $entityManager;
+	private EntityManagerInterface $entityManager;
 
-    /**
-     * @param ClassMetadata<TEntity> $classMetadata
-     */
-    public function __construct(EntityManagerInterface $entityManager, ClassMetadata $classMetadata)
-    {
-        $this->entityManager = $entityManager;
-        $this->classMetadata = $classMetadata;
+	/**
+	 * @param ClassMetadata<TEntity> $classMetadata
+	 */
+	public function __construct(EntityManagerInterface $entityManager, ClassMetadata $classMetadata)
+	{
+		$this->entityManager = $entityManager;
+		$this->classMetadata = $classMetadata;
 
-        parent::__construct($entityManager, $classMetadata);
-    }
-    protected function getEntityManager(): EntityManagerInterface
-    {
-        return $this->entityManager;
-    }
+		parent::__construct($entityManager, $classMetadata);
+	}
 
-    /**
-     * @throws EntityNotFoundException
-     */
-    public function get(int $id): BaseEntity
-    {
-        /**
-         * @var BaseEntity|null $entity
-         */
-        $entity = $this->findById($id);
-        if ($entity === null) {
-            throw new EntityNotFoundException($this->getEntityName(), 'id = ' . $id);
-        }
-        assert($entity instanceof BaseEntity);
-        return $entity;
-    }
+	protected function getEntityManager(): EntityManagerInterface
+	{
+		return $this->entityManager;
+	}
 
-    /**
-     * @throws EntityNotFoundException
-     */
-    public function findById(int $id, bool $isMandatory = true): ?BaseEntity
-    {
-        /**
-         * @var BaseEntity|null $entity
-         */
-        $entity = parent::findOneBy(['id' => $id]);
+	/**
+	 * @throws EntityNotFoundException
+	 */
+	public function get(int $id): BaseEntity
+	{
+		/**
+		 * @var BaseEntity|null $entity
+		 */
+		$entity = $this->findById($id);
 
-        if ($isMandatory && !($entity instanceof BaseEntity)) {
-            throw new EntityNotFoundException($this->getEntityName(), $this->getColumnName('id') . ' = ' . $id);
-        }
+		if ($entity === null) {
+			throw new EntityNotFoundException($this->getEntityName(), 'id = ' . $id);
+		}
 
-        if ($isMandatory) {
-            assert($entity instanceof BaseEntity);
-        }
+		\assert($entity instanceof BaseEntity);
 
-        return $entity;
-    }
+		return $entity;
+	}
 
-    /**
-     * @param  int[] $ids
-     * @return BaseEntity[]
-     */
-    public function findByIds(array $ids): array
-    {
-        /**
-         * @var BaseEntity[] $entities
-         */
-        $entities = parent::findBy(['id' => $ids]);
+	/**
+	 * @throws EntityNotFoundException
+	 */
+	public function findById(int $id, bool $isMandatory = true): BaseEntity|null
+	{
+		/**
+		 * @var BaseEntity|null $entity
+		 */
+		$entity = parent::findOneBy(['id' => $id]);
 
-        if (!is_array($entities)) {
-            throw new EntityNotFoundException($this->getEntityName(), $this->getColumnName('id') . ' in (' . implode(',', $ids) . ')');
-        }
+		if ($isMandatory && !($entity instanceof BaseEntity)) {
+			throw new EntityNotFoundException($this->getEntityName(), $this->getColumnName('id') . ' = ' . $id);
+		}
 
-        foreach ($entities as $entity) {
-            assert($entity instanceof BaseEntity);
-        }
-        return $entities;
-    }
+		if ($isMandatory) {
+			\assert($entity instanceof BaseEntity);
+		}
 
-    /**
-     * @return BaseEntity[]
-     */
-    public function findAll(): array
-    {
-        /**
-         * @var BaseEntity[] $entities
-         */
-        $entities = parent::findAll();
+		return $entity;
+	}
 
-        if (!is_array($entities)) {
-            throw new EntityNotFoundException($this->getEntityName(), 'all records');
-        }
+	/**
+	 * @param  array<int> $ids
+	 * @return array<BaseEntity>
+	 */
+	public function findByIds(array $ids): array
+	{
+		/**
+		 * @var array<BaseEntity> $entities
+		 */
+		$entities = parent::findBy(['id' => $ids]);
 
-        foreach ($entities as $entity) {
-            assert($entity instanceof BaseEntity);
-        }
-        return $entities;
-    }
+		if (!\is_array($entities)) {
+			throw new EntityNotFoundException($this->getEntityName(), $this->getColumnName('id') . ' in (' . \implode(',', $ids) . ')');
+		}
 
-    public function remove(BaseEntity $entity): void
-    {
-        $this->_em->remove($entity);
-    }
+		foreach ($entities as $entity) {
+			\assert($entity instanceof BaseEntity);
+		}
 
-    public function persist(BaseEntity $entity): void
-    {
-        $this->_em->persist($entity);
-    }
+		return $entities;
+	}
 
-    public function flush(): void
-    {
-        $this->_em->flush();
-    }
+	/**
+	 * @return array<BaseEntity>
+	 */
+	public function findAll(): array
+	{
+		/**
+		 * @var array<BaseEntity> $entities
+		 */
+		$entities = parent::findAll();
 
-    public function getColumnName(string $propertyName): string
-    {
-        return $this->_class->getColumnName($propertyName);
-    }
+		if (!\is_array($entities)) {
+			throw new EntityNotFoundException($this->getEntityName(), 'all records');
+		}
 
-    public function getEntityName(): string
-    {
-        return parent::getEntityName();
-    }
+		foreach ($entities as $entity) {
+			\assert($entity instanceof BaseEntity);
+		}
 
-    /**
-     * @param array<string, array{callable(mixed): mixed, bool, object|null, string|null}> $definition
-     * @param array<string, mixed> $values
-     */
-    public function setEntityData(BaseEntity $entity, array $definition, array $values): void
-    {
-        foreach ($definition as $argName => $def) {
-            if ($def[1] && !isset($values[$argName])) {
-                throw new \InvalidArgumentException("'{$argName}' is required.");
-            }
-            if (isset($values[$argName]) && !$def[0]($values[$argName])) {
-                throw new \InvalidArgumentException("Expected '{$argName}' to be an " . gettype($def[0]));
-            }
+		return $entities;
+	}
 
-            $setMethodName = 'set' . ucfirst($argName);
+	public function remove(BaseEntity $entity): void
+	{
+		$this->_em->remove($entity);
+	}
 
-            if (isset($values[$argName]) && !isset($def[2])) {
-                $entity->$setMethodName($values[$argName]);
-            }
+	public function persist(BaseEntity $entity): void
+	{
+		$this->_em->persist($entity);
+	}
 
-            if (isset($values[$argName]) && is_numeric($values[$argName]) && isset($def[2])) {
-                $id = (int) $values[$argName];
+	public function flush(): void
+	{
+		$this->_em->flush();
+	}
 
+	public function getColumnName(string $propertyName): string
+	{
+		return $this->_class->getColumnName($propertyName);
+	}
 
-                /**
-                 * @var BaseRepository<BaseEntity, ClassMetadata<BaseEntity>> $repo
-                 */
-                $repo = $def[2];
-                $columnEntity = $repo->findById($id);
+	public function getEntityName(): string
+	{
+		return parent::getEntityName();
+	}
 
-                if (!($columnEntity instanceof BaseEntity)) {
-                    if ($def[3] === null) {
-                        continue;
-                    }
-                    throw new EntityNotFoundException($this->getEntityName(), $this->getColumnName($def[3]) . ' = ' . $id);
-                }
-                $entity->$setMethodName($columnEntity);
-            }
-        }
-    }
+	/**
+	 * @param array<string, array{callable(mixed): mixed, bool, object|null, string|null}> $definition
+	 * @param array<string, mixed> $values
+	 */
+	public function setEntityData(
+		BaseEntity $entity,
+		array $definition,
+		array $values,
+	): void {
+		foreach ($definition as $argName => $def) {
+			if ($def[1] && !isset($values[$argName])) {
+				throw new \InvalidArgumentException($argName . ' is required.');
+			}
 
-    /**
-     * @param  BaseEntity[] $entities
-     * @param class-string $entityClassName
-     * @return array<int, array<string, mixed>>
-     * @throws EntityNotFoundException
-     */
-    protected function mapEntitiesToResponse(array $entities, string $entityClassName): array
-    {
-        $response = [];
-        foreach ($entities as $key => $entity) {
-            if (!($entity instanceof $entityClassName)) {
-                throw new EntityNotFoundException($entityClassName, "mapEntitiesToResponse");
-            }
-            $response[$key] = $entity->toArray();
-        }
-        return $response;
-    }
+			if (isset($values[$argName]) && !$def[0]($values[$argName])) {
+				throw new \InvalidArgumentException('Expected ' . $argName . ' to be an ' . \gettype($def[0]));
+			}
+
+			$setMethodName = 'set' . \ucfirst($argName);
+
+			if (isset($values[$argName]) && !isset($def[2])) {
+				$entity->$setMethodName($values[$argName]);
+			}
+
+			if (isset($values[$argName]) && \is_numeric($values[$argName]) && isset($def[2])) {
+				$id = (int)$values[$argName];
 
 
-    /**
-     * @param class-string $entityClassName
-     * @throws \Doctrine\ORM\Mapping\MappingException
-     */
-    protected function addResultSetMapping(ResultSetMapping $rsm, string $entityClassName, string $entityAlias): ResultSetMapping
-    {
-        $rsm->addEntityResult($entityClassName, $entityAlias);
-        $rsm = $this->addFieldResultSetMapping($rsm, $entityClassName, $entityAlias);
-        return $this->addKeysResultSetMapping($rsm, $entityClassName, $entityAlias);
-    }
+				/**
+				 * @var BaseRepository<BaseEntity, ClassMetadata<BaseEntity>> $repo
+				 */
+				$repo = $def[2];
+				$columnEntity = $repo->findById($id);
 
-    /**
-     * @param class-string $entityClassName
-     * @throws \Doctrine\ORM\Mapping\MappingException
-     */
-    protected function addJoinResultSetMapping(ResultSetMapping $rsm, string $entityClassName, string $entityAlias, string $parentAlias, string $relation): ResultSetMapping
-    {
-        $rsm->addJoinedEntityResult($entityClassName, $entityAlias, $parentAlias, $relation);
-        $rsm = $this->addFieldResultSetMapping($rsm, $entityClassName, $entityAlias);
-        return $this->addKeysResultSetMapping($rsm, $entityClassName, $entityAlias);
-    }
+				if (!($columnEntity instanceof BaseEntity)) {
+					if ($def[3] === null) {
+						continue;
+					}
 
-    /**
-     * @param class-string $entityClassName
-     * @throws \Doctrine\ORM\Mapping\MappingException
-     */
-    protected function addFieldResultSetMapping(ResultSetMapping $rsm, string $entityClassName, string $entityAlias): ResultSetMapping
-    {
-        $metadata = $this->getEntityManager()->getClassMetadata($entityClassName);
-        foreach ($metadata->fieldMappings as $fieldMapping) {
-            if (empty($fieldMapping['id'])) {
-                $rsm->addFieldResult($entityAlias, $fieldMapping['columnName'], $fieldMapping['fieldName']);
-            }
-        }
-        return $rsm;
-    }
+					throw new EntityNotFoundException($this->getEntityName(), $this->getColumnName($def[3]) . ' = ' . $id);
+				}
 
-    /**
-     * @param class-string $entityClassName
-     * @throws \Doctrine\ORM\Mapping\MappingException
-     */
-    protected function addKeysResultSetMapping(ResultSetMapping $rsm, string $entityClassName, string $entityAlias): ResultSetMapping
-    {
-        $classMetadata = $this->getEntityManager()->getClassMetadata($entityClassName);
+				$entity->$setMethodName($columnEntity);
+			}
+		}
+	}
 
-        foreach ($classMetadata->fieldMappings as $fieldMapping) {
-            if (!empty($fieldMapping['id'])) {
-                $rsm->addMetaResult($entityAlias, $fieldMapping['columnName'], $fieldMapping['fieldName'], false);
-            }
-        }
+	/**
+	 * @param array<BaseEntity> $entities
+	 * @param class-string $entityClassName
+	 * @return array<int, array<string, mixed>>
+	 * @throws EntityNotFoundException
+	 */
+	protected function mapEntitiesToResponse(array $entities, string $entityClassName): array
+	{
+		$response = [];
 
-        foreach ($classMetadata->associationMappings as $associationMapping) {
-            if (isset($associationMapping['joinColumns']) && in_array($associationMapping['type'], [ClassMetadataInfo::MANY_TO_ONE, ClassMetadataInfo::ONE_TO_ONE])) {
-                foreach ($associationMapping['joinColumns'] as $joinColumn) {
-                    if (!empty($fieldMapping['id'])) {
-                        $rsm->addMetaResult($entityAlias, $joinColumn['name'], $associationMapping['fieldName']);
-                    } else {
-                        $rsm->addMetaResult($entityAlias, $joinColumn['name'], $associationMapping['fieldName'], true);
-                    }
-                }
-            }
-        }
-        return $rsm;
-    }
+		foreach ($entities as $key => $entity) {
+			if (!($entity instanceof $entityClassName)) {
+				throw new EntityNotFoundException($entityClassName, 'mapEntitiesToResponse');
+			}
 
-    /** return array, where key = column name and value is true for asociation/join column
-     * @param class-string $entityClassName
-     * @return array<string, bool>
-     */
-    public function getColumnNames(string $entityClassName, string $tableAlias = '', bool $addColumnNameAlias = false): array
-    {
-        /** @var ClassMetadataInfo $classMetadata */
-        $classMetadata = $this->getEntityManager()->getClassMetadata($entityClassName);
+			$response[$key] = $entity->toArray();
+		}
 
-        $prefix = '';
-        if ($tableAlias !== '') {
-            $prefix = $tableAlias . '.';
-        }
+		return $response;
+	}
 
-        $columnNames = [];
+	/**
+	 * @param class-string $entityClassName
+	 * @throws \Doctrine\ORM\Mapping\MappingException
+	 */
+	protected function addResultSetMapping(
+		ResultSetMapping $rsm,
+		string $entityClassName,
+		string $entityAlias,
+	): ResultSetMapping {
+		$rsm->addEntityResult($entityClassName, $entityAlias);
+		$rsm = $this->addFieldResultSetMapping($rsm, $entityClassName, $entityAlias);
 
-        foreach ($classMetadata->fieldMappings as $fieldMapping) {
-            $postfix = $this->getColumnAlias($addColumnNameAlias, $tableAlias, $fieldMapping['columnName']);
-            $columnNames[$prefix . $fieldMapping['columnName'] . $postfix] = false;
-        }
+		return $this->addKeysResultSetMapping($rsm, $entityClassName, $entityAlias);
+	}
 
-        foreach ($classMetadata->associationMappings as $associationMapping) {
-            if (!$associationMapping['isOwningSide'] || isset($associationMapping['joinTable'])) {
-                continue;
-            }
-            if (isset($associationMapping['joinColumns']) && in_array($associationMapping['type'], [ClassMetadataInfo::MANY_TO_ONE, ClassMetadataInfo::ONE_TO_ONE])) {
-                foreach ($associationMapping['joinColumns'] as $joinColumn) {
-                    $postfix = $this->getColumnAlias($addColumnNameAlias, $tableAlias, $joinColumn['name']);
-                    $columnNames[$prefix . $joinColumn['name'] . $postfix] = true;
-                }
-            }
-        }
-        return $columnNames;
-    }
+	/**
+	 * @param class-string $entityClassName
+	 * @throws \Doctrine\ORM\Mapping\MappingException
+	 */
+	protected function addJoinResultSetMapping(
+		ResultSetMapping $rsm,
+		string $entityClassName,
+		string $entityAlias,
+		string $parentAlias,
+		string $relation,
+	): ResultSetMapping {
+		$rsm->addJoinedEntityResult($entityClassName, $entityAlias, $parentAlias, $relation);
+		$rsm = $this->addFieldResultSetMapping($rsm, $entityClassName, $entityAlias);
 
-    private function getColumnAlias(bool $addColumnNameAlias, string $tableAlias, string $columnName, bool $addAs = true): string
-    {
-        if (!$addColumnNameAlias) {
-            return '';
-        }
-        $nameParts = explode('.', $columnName);
-        $columnName = end($nameParts);
+		return $this->addKeysResultSetMapping($rsm, $entityClassName, $entityAlias);
+	}
 
-        return ($addAs ? ' AS ' : '') . $tableAlias . '__' . $columnName;
-    }
+	/**
+	 * @param class-string $entityClassName
+	 * @throws \Doctrine\ORM\Mapping\MappingException
+	 */
+	protected function addFieldResultSetMapping(
+		ResultSetMapping $rsm,
+		string $entityClassName,
+		string $entityAlias,
+	): ResultSetMapping {
+		$metadata = $this->getEntityManager()->getClassMetadata($entityClassName);
 
-    /**
-     * @param class-string $entityClassName
-     */
-    public function addSerializeColumnNames(string $columnNameStr, string $entityClassName, string $tableAlias = '', bool $addColumnNamePostfix = false): string
-    {
-        $newCols = implode(', ', array_keys($this->getColumnNames($entityClassName, $tableAlias, $addColumnNamePostfix)));
-        if ($columnNameStr) {
-            $columnNameStr .= ', ' . $newCols;
-        } else {
-            $columnNameStr = $newCols;
-        }
-        return $columnNameStr;
-    }
+		foreach ($metadata->fieldMappings as $fieldMapping) {
+			if (empty($fieldMapping['id'])) {
+				$rsm->addFieldResult($entityAlias, $fieldMapping['columnName'], $fieldMapping['fieldName']);
+			}
+		}
 
-    /**
-     * @param string $sql The SQL query to execute.
-     * @param array<string|int, array<int, int>|\DateTime|string|int|float|bool|\DateTimeInterface|null> $parameters The parameters to bind to the query.
-     * @param ResultSetMapping|null $rsm The result set mapping to use.
-     * @return mixed The result of the query.
-     * @throws \Doctrine\ORM\ORMException If there is a problem executing the query.
-     */
-    public function executeNativeQuery(string $sql, array $parameters = [], ?ResultSetMapping $rsm = null): mixed
-    {
-        if ($rsm === null) {
-            $rsm = new ResultSetMapping();
-        }
-        $query = $this->getEntityManager()->createNativeQuery($sql, $rsm);
+		return $rsm;
+	}
 
-        foreach ($parameters as $key => $value) {
-            if ($value instanceof \DateTimeInterface) {
-                $sqlValue = $value->format('Y-m-d H:i:s');
-                $query->setParameter($key, $sqlValue);
-            } else {
-                $query->setParameter($key, $value);
-            }
-        }
+	/**
+	 * @param class-string $entityClassName
+	 * @throws \Doctrine\ORM\Mapping\MappingException
+	 */
+	protected function addKeysResultSetMapping(
+		ResultSetMapping $rsm,
+		string $entityClassName,
+		string $entityAlias,
+	): ResultSetMapping {
+		$classMetadata = $this->getEntityManager()->getClassMetadata($entityClassName);
 
-        try {
-            return $query->getScalarResult();
-            //return $query->getResult();
-        } catch (ORMException $e) {
-            // Handle exception or log it
-            throw $e;
-        }
-    }
+		foreach ($classMetadata->fieldMappings as $fieldMapping) {
+			if (!empty($fieldMapping['id'])) {
+				$rsm->addMetaResult($entityAlias, $fieldMapping['columnName'], $fieldMapping['fieldName'], false);
+			}
+		}
 
-    /**
-     * Represents the structure of join mappings.
-     *
-     * joinMappings structure: //TODO: here add interface and use it
-     * [
-     *     [{entityClassName}, {tableAlias}, {parentTableAlias}, {relation}, {colums}],
-     *     ...
-     * ]
-     *
-     * - entityClassName: The class name of the joined entity.
-     * - tableAlias: The unique alias to use for the joined entity.
-     * - parentTableAlias: The alias of the entity result that is the parent of this joined result.
-     * - relation: The association field that connects the parent entity result.
-     * - columns: The columns to select from the joined entity.
-     *
-     * @param array<array<mixed>> $joinMapings
-     */
-    public function createResultSetMaping(array $joinMapings, bool $addScalarResult = false, bool $addColumnNameAlias = false): ResultSetMapping
-    {
-        /** @var ResultSetMapping */
-        $rsm = new ResultSetMapping();
-        foreach ($joinMapings as $joinParams) {
-            if (!isset($joinParams[0]) || !is_string($joinParams[0]) || !class_exists($joinParams[0])) {
-                throw new \InvalidArgumentException("Entity class in joinMapings does not correspond to any existing class.");
-            }
-            $entityClassName = $joinParams[0];
-            $tableAlias = $joinParams[1] ?? '';
-            $parentTableAlias = $joinParams[2] ?? '';
-            $relation = $joinParams[3] ?? '';
+		foreach ($classMetadata->associationMappings as $associationMapping) {
+			if (isset($associationMapping['joinColumns']) && \in_array($associationMapping['type'], [ClassMetadataInfo::MANY_TO_ONE, ClassMetadataInfo::ONE_TO_ONE], true)) {
+				foreach ($associationMapping['joinColumns'] as $joinColumn) {
+					if (!empty($fieldMapping['id'])) {
+						$rsm->addMetaResult($entityAlias, $joinColumn['name'], $associationMapping['fieldName']);
+					} else {
+						$rsm->addMetaResult($entityAlias, $joinColumn['name'], $associationMapping['fieldName'], true);
+					}
+				}
+			}
+		}
 
-            if ($parentTableAlias === '') {
-                $rsm = $this->addResultSetMapping($rsm, $entityClassName, $tableAlias);
-            } else {
-                $rsm = $this->addJoinResultSetMapping($rsm, $entityClassName, $tableAlias, $parentTableAlias, $relation);
-            }
-            if ($addScalarResult) {
-                $cols = $joinParams[4] ?? $this->getColumnNames($entityClassName, $tableAlias, false);
+		return $rsm;
+	}
 
-                foreach (array_keys($cols) as $colName) {
-                    if (!is_string($colName) || !is_string($tableAlias) || !is_string($entityClassName) || !is_bool($addColumnNameAlias)) {
-                        throw new \InvalidArgumentException("Invalid type of parameters in createResultSetMaping");
-                    }
-                    $alias = $this->getColumnAlias($addColumnNameAlias, $tableAlias, $colName, false);
-                    $rsm->addScalarResult($alias, $alias);
-                }
-            }
-        }
-        return $rsm;
-    }
+	/** return array, where key = column name and value is true for asociation/join column
+	 *
+	 * @param class-string $entityClassName
+	 * @return array<string, bool>
+	 */
+	public function getColumnNames(
+		string $entityClassName,
+		string $tableAlias = '',
+		bool $addColumnNameAlias = false,
+	): array {
+		/** @var ClassMetadataInfo $classMetadata */
+		$classMetadata = $this->getEntityManager()->getClassMetadata($entityClassName);
 
-    /**
-     * @param array<string, mixed> $row
-     * @return array<string, mixed>
-     */
-    public function extractEntityData(array $row, string $tableAlias): array
-    {
-        $data = [];
-        foreach ($row as $colName => $value) {
-            if (strpos($colName, $tableAlias . self::SEPARATOR_ALIAS) === 0) {
-                $data[str_replace($tableAlias . self::SEPARATOR_ALIAS, '', $colName)] = $value;
-            }
-        }
-        return $data;
-    }
+		$prefix = '';
 
-    /**
-     * Get all sql columns from entities
-     *
-     * entitiesAndAliases structure:
-     * [
-     *     [{entityClassName}, {tableAlias}],
-     *     ...
-     * ]
-     *
-     * - entityClassName: The class name of the joined entity.
-     * - tableAlias: The unique alias to use for the joined entity.
-     *
-     * @param array<array<mixed>> $entitiesAndAliases An array containing arrays representing entities and their aliases.
-     */
-    public function getSerializeColumnNames(array $entitiesAndAliases, bool $addColumnNamePostfix = false): string
-    {
-        $queryColumns = '';
-        foreach ($entitiesAndAliases as $entityParams) {
-            if (!isset($entityParams[0]) || !is_string($entityParams[0]) || !class_exists($entityParams[0])) {
-                throw new \InvalidArgumentException("Entity class in entities does not correspond to any existing class.");
-            }
-            $entityClassName = $entityParams[0];
-            $tableAlias = $entityParams[1] ?? '';
+		if ($tableAlias !== '') {
+			$prefix = $tableAlias . '.';
+		}
 
-            $queryColumns = $this->addSerializeColumnNames($queryColumns, $entityClassName, $tableAlias, $addColumnNamePostfix);
-        }
-        return $queryColumns;
-    }
+		$columnNames = [];
 
-    private function isValidType(mixed $value): bool
-    {
-        if (is_null($value)) {
-            return true;
-        }
-        //array<int, int>
-        if (is_array($value)) {
-            foreach ($value as $key => $item) {
-                if (!is_int($key) || !is_int($item)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        $type = gettype($value);
-        $output = in_array($type, ['integer', 'string', 'double', 'boolean']) || $value instanceof \DateTime || $value instanceof \DateTimeInterface;
-        return $output;
-    }
+		foreach ($classMetadata->fieldMappings as $fieldMapping) {
+			$postfix = $this->getColumnAlias($addColumnNameAlias, $tableAlias, $fieldMapping['columnName']);
+			$columnNames[$prefix . $fieldMapping['columnName'] . $postfix] = false;
+		}
 
-    /**
-     * @param array<mixed> $array
-     */
-    public function checkArrayTypes(array $array): bool
-    {
-        foreach ($array as $value) {
-            if (!$this->isValidType($value)) {
-                return false;
-            }
-        }
-        return true;
-    }
+		foreach ($classMetadata->associationMappings as $associationMapping) {
+			if (!$associationMapping['isOwningSide'] || isset($associationMapping['joinTable'])) {
+				continue;
+			}
 
-    /**
-     * @param array<string, mixed> $row
-     * @return array<string|int, mixed>
-     */
-    public function getEntityDataFromRow(array $row, string $alias): array
-    {
-        $data = array_filter($row, function ($key) use ($alias) {
-            return strpos($key, $alias . '_') === 0;
-        }, ARRAY_FILTER_USE_KEY);
+			if (isset($associationMapping['joinColumns']) && \in_array($associationMapping['type'], [ClassMetadataInfo::MANY_TO_ONE, ClassMetadataInfo::ONE_TO_ONE], true)) {
+				foreach ($associationMapping['joinColumns'] as $joinColumn) {
+					$postfix = $this->getColumnAlias($addColumnNameAlias, $tableAlias, $joinColumn['name']);
+					$columnNames[$prefix . $joinColumn['name'] . $postfix] = true;
+				}
+			}
+		}
 
-        $newKeys = array_map(function ($key) use ($alias) {
-            return str_replace($alias . '_', '', $key);
-        }, array_keys($data));
+		return $columnNames;
+	}
 
-        return array_combine($newKeys, array_values($data));
-    }
+	private function getColumnAlias(
+		bool $addColumnNameAlias,
+		string $tableAlias,
+		string $columnName,
+		bool $addAs = true,
+	): string {
+		if (!$addColumnNameAlias) {
+			return '';
+		}
 
-    /**
-     * @param array<array<string, mixed>> $rows
-     * @return array<array<string|int, mixed>>
-     */
-    public function getEntityDataFromRows(array $rows, string $alias): array
-    {
-        if (empty($rows)) {
-            return [];
-        }
-        $output = [];
-        foreach ($rows as $row) {
-            $output[] = $this->getEntityDataFromRow($row, $alias);
-        }
-        return $output;
-    }
+		$nameParts = \explode('.', $columnName);
+		$columnName = \end($nameParts);
+
+		return ($addAs ? ' AS ' : '') . $tableAlias . '__' . $columnName;
+	}
+
+	/**
+	 * @param class-string $entityClassName
+	 */
+	public function addSerializeColumnNames(
+		string $columnNameStr,
+		string $entityClassName,
+		string $tableAlias = '',
+		bool $addColumnNamePostfix = false,
+	): string {
+		$newCols = \implode(', ', \array_keys($this->getColumnNames($entityClassName, $tableAlias, $addColumnNamePostfix)));
+
+		if ($columnNameStr) {
+			$columnNameStr .= ', ' . $newCols;
+		} else {
+			$columnNameStr = $newCols;
+		}
+
+		return $columnNameStr;
+	}
+
+	/**
+	 * @param string $sql The SQL query to execute.
+	 * @param array<string|int, array<int, int>|\DateTime|string|int|float|bool|\DateTimeInterface|null> $parameters The parameters to bind to the query.
+	 * @param ResultSetMapping|null $rsm The result set mapping to use.
+	 * @return mixed The result of the query.
+	 * @throws \Doctrine\ORM\ORMException If there is a problem executing the query.
+	 */
+	public function executeNativeQuery(
+		string $sql,
+		array $parameters = [],
+		ResultSetMapping|null $rsm = null,
+	): mixed {
+		if ($rsm === null) {
+			$rsm = new ResultSetMapping();
+		}
+
+		$query = $this->getEntityManager()->createNativeQuery($sql, $rsm);
+
+		foreach ($parameters as $key => $value) {
+			if ($value instanceof \DateTimeInterface) {
+				$sqlValue = $value->format('Y-m-d H:i:s');
+				$query->setParameter($key, $sqlValue);
+			} else {
+				$query->setParameter($key, $value);
+			}
+		}
+
+		try {
+			return $query->getScalarResult();
+			//return $query->getResult();
+		} catch (ORMException $e) {
+			// Handle exception or log it
+			throw $e;
+		}
+	}
+
+	/**
+	 * Represents the structure of join mappings.
+	 *
+	 * joinMappings structure: //TODO: here add interface and use it
+	 * [
+	 *     [{entityClassName}, {tableAlias}, {parentTableAlias}, {relation}, {colums}],
+	 *     ...
+	 * ]
+	 *
+	 * - entityClassName: The class name of the joined entity.
+	 * - tableAlias: The unique alias to use for the joined entity.
+	 * - parentTableAlias: The alias of the entity result that is the parent of this joined result.
+	 * - relation: The association field that connects the parent entity result.
+	 * - columns: The columns to select from the joined entity.
+	 *
+	 * @param array<array<mixed>> $joinMapings
+	 */
+	public function createResultSetMaping(
+		array $joinMapings,
+		bool $addScalarResult = false,
+		bool $addColumnNameAlias = false,
+	): ResultSetMapping {
+		/** @var ResultSetMapping */
+		$rsm = new ResultSetMapping();
+
+		foreach ($joinMapings as $joinParams) {
+			if (!isset($joinParams[0]) || !\is_string($joinParams[0]) || !\class_exists($joinParams[0])) {
+				throw new \InvalidArgumentException('Entity class in joinMapings does not correspond to any existing class.');
+			}
+
+			$entityClassName = $joinParams[0];
+			$tableAlias = $joinParams[1] ?? '';
+			$parentTableAlias = $joinParams[2] ?? '';
+			$relation = $joinParams[3] ?? '';
+
+			if ($parentTableAlias === '') {
+				$rsm = $this->addResultSetMapping($rsm, $entityClassName, $tableAlias);
+			} else {
+				$rsm = $this->addJoinResultSetMapping($rsm, $entityClassName, $tableAlias, $parentTableAlias, $relation);
+			}
+
+			if ($addScalarResult) {
+				$cols = $joinParams[4] ?? $this->getColumnNames($entityClassName, $tableAlias, false);
+
+				foreach (\array_keys($cols) as $colName) {
+					if (!\is_string($colName) || !\is_string($tableAlias) || !\is_string($entityClassName) || !\is_bool($addColumnNameAlias)) {
+						throw new \InvalidArgumentException('Invalid type of parameters in createResultSetMaping');
+					}
+
+					$alias = $this->getColumnAlias($addColumnNameAlias, $tableAlias, $colName, false);
+					$rsm->addScalarResult($alias, $alias);
+				}
+			}
+		}
+
+		return $rsm;
+	}
+
+	/**
+	 * @param array<string, mixed> $row
+	 * @return array<string, mixed>
+	 */
+	public function extractEntityData(array $row, string $tableAlias): array
+	{
+		$data = [];
+
+		foreach ($row as $colName => $value) {
+			if (\strpos($colName, $tableAlias . self::SEPARATOR_ALIAS) === 0) {
+				$data[\str_replace($tableAlias . self::SEPARATOR_ALIAS, '', $colName)] = $value;
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Get all sql columns from entities
+	 *
+	 * entitiesAndAliases structure:
+	 * [
+	 *     [{entityClassName}, {tableAlias}],
+	 *     ...
+	 * ]
+	 *
+	 * - entityClassName: The class name of the joined entity.
+	 * - tableAlias: The unique alias to use for the joined entity.
+	 *
+	 * @param array<array<mixed>> $entitiesAndAliases An array containing arrays representing entities and their aliases.
+	 */
+	public function getSerializeColumnNames(array $entitiesAndAliases, bool $addColumnNamePostfix = false): string
+	{
+		$queryColumns = '';
+
+		foreach ($entitiesAndAliases as $entityParams) {
+			if (!isset($entityParams[0]) || !\is_string($entityParams[0]) || !\class_exists($entityParams[0])) {
+				throw new \InvalidArgumentException('Entity class in entities does not correspond to any existing class.');
+			}
+
+			$entityClassName = $entityParams[0];
+			$tableAlias = $entityParams[1] ?? '';
+
+			$queryColumns = $this->addSerializeColumnNames($queryColumns, $entityClassName, $tableAlias, $addColumnNamePostfix);
+		}
+
+		return $queryColumns;
+	}
+
+	private function isValidType(mixed $value): bool
+	{
+		if (\is_null($value)) {
+			return true;
+		}
+
+		//array<int, int>
+		if (\is_array($value)) {
+			foreach ($value as $key => $item) {
+				if (!\is_int($key) || !\is_int($item)) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		$type = \gettype($value);
+
+		return \in_array($type, ['integer', 'string', 'double', 'boolean'], true) || $value instanceof \DateTime || $value instanceof \DateTimeInterface;
+	}
+
+	/**
+	 * @param array<mixed> $array
+	 */
+	public function checkArrayTypes(array $array): bool
+	{
+		foreach ($array as $value) {
+			if (!$this->isValidType($value)) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * @param array<string, mixed> $row
+	 * @return array<string|int, mixed>
+	 */
+	public function getEntityDataFromRow(array $row, string $alias): array
+	{
+		$data = \array_filter($row, fn ($key) => \strpos($key, $alias . '_') === 0, \ARRAY_FILTER_USE_KEY);
+
+		$newKeys = \array_map(fn ($key) => \str_replace($alias . '_', '', $key), \array_keys($data));
+
+		return \array_combine($newKeys, \array_values($data));
+	}
+
+	/**
+	 * @param array<array<string, mixed>> $rows
+	 * @return array<array<string|int, mixed>>
+	 */
+	public function getEntityDataFromRows(array $rows, string $alias): array
+	{
+		if (empty($rows)) {
+			return [];
+		}
+
+		$output = [];
+
+		foreach ($rows as $row) {
+			$output[] = $this->getEntityDataFromRow($row, $alias);
+		}
+
+		return $output;
+	}
 }

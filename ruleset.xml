@@ -1,0 +1,205 @@
+<?xml version="1.0" ?>
+<ruleset name="nette-graphql-api">
+
+  <config name="installed_paths" value="vendor/slevomat/coding-standard"/>
+
+  <exclude-pattern>*/temp/*</exclude-pattern>
+  <exclude-pattern>*/vendor/*</exclude-pattern>
+
+  <!-- PSR -->
+  <rule ref="PSR1.Classes.ClassDeclaration.MissingNamespace">
+    <exclude-pattern>*/app/Model/Database/Migrations/*</exclude-pattern>
+  </rule>
+
+  <rule ref="PSR1">
+    <!-- excluded until new release https://github.com/squizlabs/PHP_CodeSniffer/issues/3727#issuecomment-1558168588 -->
+    <exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
+  </rule>
+
+  <rule ref="PSR2">
+    <exclude name="Generic.WhiteSpace.DisallowTabIndent"/>
+    <exclude name="Generic.Files.LineLength.TooLong"/>
+    <exclude name="PSR2.Methods.FunctionCallSignature.MultipleArguments"/> <!-- PHP 7.4 short arrow fn not supported -->
+  </rule>
+
+  <!-- WhiteSpace -->
+  <rule ref="Generic.WhiteSpace.DisallowSpaceIndent"/>
+
+  <!-- Classes -->
+  <rule ref="Generic.Classes.DuplicateClassName"/>
+  <rule ref="Squiz.Classes.LowercaseClassKeywords"/>
+  <rule ref="SlevomatCodingStandard.Classes.ClassConstantVisibility"/>
+  <rule ref="SlevomatCodingStandard.Classes.BackedEnumTypeSpacing"/>
+  <rule ref="SlevomatCodingStandard.Classes.ModernClassNameReference"/>
+  <rule ref="SlevomatCodingStandard.Classes.MethodSpacing"/>
+  <rule ref="SlevomatCodingStandard.Classes.PropertySpacing">
+    <properties>
+      <property name="minLinesCountBeforeWithComment" value="0"/>
+    </properties>
+  </rule>
+  <rule ref="SlevomatCodingStandard.Classes.ClassMemberSpacing" />
+  <rule ref="SlevomatCodingStandard.Classes.EmptyLinesAroundClassBraces">
+    <properties>
+      <property name="linesCountAfterOpeningBrace" type="int" value="0" />
+      <property name="linesCountBeforeClosingBrace" type="int" value="0" />
+    </properties>
+  </rule>
+
+  <rule ref="SlevomatCodingStandard.Classes.RequireMultiLineMethodSignature">
+    <properties>
+      <property name="minParametersCount" value="3"/>
+    </properties>
+  </rule>
+  <rule ref="SlevomatCodingStandard.Classes.ClassStructure">
+    <properties>
+      <property name="groups" type="array">
+        <element value="uses" />
+        <element value="enum cases"/>
+        <element value="public constants" />
+        <element value="protected constants" />
+        <element value="private constants" />
+
+        <element value="public static properties" />
+        <element value="protected static properties" />
+        <element value="private static properties" />
+
+        <element value="public properties" />
+        <element value="protected properties" />
+        <element value="private properties" />
+
+        <element value="constructor"/>
+        <element value="methods"/>
+      </property>
+    </properties>
+  </rule>
+
+  <!-- Commenting -->
+  <rule ref="SlevomatCodingStandard.Commenting.EmptyComment"/>
+
+  <!-- ControlStructures -->
+  <rule ref="SlevomatCodingStandard.ControlStructures.BlockControlStructureSpacing">
+    <properties>
+      <property name="controlStructures" type="array">
+        <element value="if"/>
+        <element value="do"/>
+        <element value="while"/>
+        <element value="for"/>
+        <element value="foreach"/>
+        <element value="switch"/>
+        <element value="try"/>
+      </property>
+    </properties>
+  </rule>
+  <rule ref="SlevomatCodingStandard.ControlStructures.NewWithParentheses"/>
+  <rule ref="SlevomatCodingStandard.ControlStructures.JumpStatementsSpacing">
+    <properties>
+      <property name="jumpStatements" type="array">
+        <element value="continue"/>
+        <element value="break"/>
+        <element value="goto"/>
+        <element value="return"/>
+        <element value="throw"/>
+      </property>
+    </properties>
+  </rule>
+
+  <!-- Exceptions -->
+  <rule ref="SlevomatCodingStandard.Exceptions.DeadCatch"/>
+  <rule ref="SlevomatCodingStandard.Exceptions.ReferenceThrowableOnly"/>
+
+  <!-- NamingConventions -->
+  <rule ref="Generic.NamingConventions.UpperCaseConstantName"/>
+
+  <!-- TypeHints -->
+  <rule ref="SlevomatCodingStandard.TypeHints.ReturnTypeHintSpacing"/>
+  <!-- <rule ref="SlevomatCodingStandard.TypeHints.NullableTypeForNullDefaultValue"/> -->
+  <rule ref="SlevomatCodingStandard.TypeHints.ParameterTypeHintSpacing"/>
+  <rule ref="SlevomatCodingStandard.Classes.PropertyDeclaration"/>
+
+  <!-- Operators -->
+  <rule ref="SlevomatCodingStandard.Operators.SpreadOperatorSpacing"/>
+
+  <!-- PHP -->
+  <rule ref="Generic.PHP.DeprecatedFunctions"/>
+  <rule ref="Generic.PHP.ForbiddenFunctions">
+    <properties>
+      <property name="forbiddenFunctions" type="array">
+        <element key="bdump" value="null"/>
+        <element key="dump" value="null"/>
+        <element key="var_dump" value="null"/>
+      </property>
+    </properties>
+  </rule>
+  <rule ref="Generic.PHP.LowerCaseConstant"/>
+  <rule ref="SlevomatCodingStandard.PHP.ReferenceSpacing"/>
+  <rule ref="SlevomatCodingStandard.PHP.ShortList"/>
+  <rule ref="SlevomatCodingStandard.PHP.TypeCast"/>
+  <rule ref="SlevomatCodingStandard.PHP.UselessSemicolon"/>
+
+  <!-- Variables -->
+  <rule ref="SlevomatCodingStandard.Variables.DuplicateAssignmentToVariable"/>
+  <rule ref="SlevomatCodingStandard.Variables.UnusedVariable"/>
+  <rule ref="SlevomatCodingStandard.Variables.UselessVariable"/>
+
+  <!-- Namespaces -->
+  <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
+    <properties>
+      <property name="searchAnnotations" value="true"/>
+    </properties>
+  </rule>
+  <rule ref="SlevomatCodingStandard.Namespaces.UseFromSameNamespace"/>
+  <rule ref="SlevomatCodingStandard.Namespaces.DisallowGroupUse"/>
+  <rule ref="SlevomatCodingStandard.Namespaces.UseDoesNotStartWithBackslash"/>
+  <rule ref="SlevomatCodingStandard.Namespaces.FullyQualifiedGlobalConstants"/>
+  <rule ref="SlevomatCodingStandard.Namespaces.FullyQualifiedGlobalFunctions"/>
+  <rule ref="SlevomatCodingStandard.Namespaces.AlphabeticallySortedUses"/>
+
+  <!-- Functions -->
+  <rule ref="SlevomatCodingStandard.Functions.RequireArrowFunction"/>
+  <rule ref="Squiz.Functions.LowercaseFunctionKeywords"/>
+  <rule ref="SlevomatCodingStandard.Functions.RequireTrailingCommaInCall"/>
+  <rule ref="SlevomatCodingStandard.Functions.RequireTrailingCommaInDeclaration"/>
+  <rule ref="SlevomatCodingStandard.Functions.UnusedInheritedVariablePassedToClosure"/>
+  <rule ref="SlevomatCodingStandard.Functions.ArrowFunctionDeclaration"/>
+  <rule ref="SlevomatCodingStandard.Functions.StrictCall"/>
+
+  <!-- Arrays -->
+  <rule ref="SlevomatCodingStandard.Arrays.TrailingArrayComma"/>
+
+  <!-- Attributes -->
+  <rule ref="SlevomatCodingStandard.Attributes.RequireAttributeAfterDocComment"/>
+  <rule ref="SlevomatCodingStandard.Attributes.DisallowAttributesJoining"/>
+
+  <!-- Formatting -->
+  <rule ref="Generic.Formatting.SpaceAfterCast">
+    <properties>
+      <property name="spacing" value="0"/>
+    </properties>
+  </rule>
+
+  <!-- Commenting -->
+  <rule ref="SlevomatCodingStandard.Commenting.DocCommentSpacing"/>
+  <rule ref="Squiz.Commenting.DocCommentAlignment"/>
+
+  <!-- Strings -->
+  <rule ref="Generic.Strings.UnnecessaryStringConcat"/>
+  <rule ref="Squiz.Strings.ConcatenationSpacing">
+    <properties>
+      <property name="spacing" value="1"/>
+      <property name="ignoreNewlines" value="true"/>
+    </properties>
+  </rule>
+  <rule ref="Squiz.Strings.EchoedStrings"/>
+
+  <!-- TypeHints -->
+  <rule ref="SlevomatCodingStandard.TypeHints.DisallowArrayTypeHintSyntax">
+    <properties>
+      <property name="traversableTypeHints" type="array">
+        <element value="\Traversable"/>
+        <element value="\Generator"/>
+        <element value="\Iterator"/>
+        <element value="\Doctrine\Common\Collections\Collection"/>
+      </property>
+    </properties>
+  </rule>
+</ruleset>

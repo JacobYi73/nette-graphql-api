@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
+namespace Tests;
+
 use App\GraphQL\GraphqlConfig;
 use App\GraphQL\Resolvers\BaseResolver;
 use App\Model\Database\Entity\BaseEntity;
 use App\Model\Database\Repository\BaseRepository;
-use App\Model\Exceptions\EntityNotFoundException;
 use GraphQL\Type\Definition\ResolveInfo;
+use InvalidArgumentException;
+use Mockery;
 use Tester\Assert;
 use Tester\TestCase;
 
@@ -18,118 +21,122 @@ require __DIR__ . '/../vendor/autoload.php';
  */
 final class BaseResolverTest extends TestCase
 {
-    private BaseResolver $resolver;
-    private $repositoryMock;
-    private $graphqlConfigMock;
+	/**
+	 * @var BaseResolver
+	 */
+	private BaseResolver $resolver;
+	private $repositoryMock;
+	private $graphqlConfigMock;
 
-    protected function setUp(): void
-    {
-        $this->repositoryMock = Mockery::mock(\App\Model\Database\Repository\BookRepository::class);
-        $this->graphqlConfigMock = Mockery::mock(GraphqlConfig::class);
+	protected function setUp(): void
+	{
+		$this->repositoryMock = Mockery::mock(\App\Model\Database\Repository\BookRepository::class);
+		$this->graphqlConfigMock = Mockery::mock(GraphqlConfig::class);
 
-        $this->resolver = new class($this->repositoryMock, $this->graphqlConfigMock) extends BaseResolver {
-            public function __construct($repository, $graphqlConfig)
-            {
-                parent::__construct($repository, $graphqlConfig);
-            }
-        };
-    }
+		$this->resolver = new class($this->repositoryMock, $this->graphqlConfigMock) extends BaseResolver {
+			public function __construct($repository, $graphqlConfig)
+			{
+				parent::__construct($repository, $graphqlConfig);
+			}
+		};
+	}
 
-    public function testGetDefaultLangId(): void
-    {
-        $this->graphqlConfigMock
-            ->shouldReceive('getDefaultLangId')
-            ->andReturn(1);
+	public function testGetDefaultLangId(): void
+	{
+		$this->graphqlConfigMock
+			->shouldReceive('getDefaultLangId')
+			->andReturn(1);
 
-        Assert::same(1, $this->resolver->getDefaultLangId());
-    }
+		Assert::same(1, $this->resolver->getDefaultLangId());
+	}
 
-    public function testQueryByIdValidId(): void
-    {
-        $entityMock = Mockery::mock(\App\Model\Database\Entity\Book::class);
-        $entityMock->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Test Entity']);
+	public function testQueryByIdValidId(): void
+	{
+		$entityMock = Mockery::mock(\App\Model\Database\Entity\Book::class);
+		$entityMock->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Test Entity']);
 
-        $this->repositoryMock
-            ->shouldReceive('findById')
-            ->with(1)
-            ->andReturn($entityMock);
+		$this->repositoryMock
+			->shouldReceive('findById')
+			->with(1)
+			->andReturn($entityMock);
 
-        $result = $this->resolver->queryById(null, ['id' => 1], null, Mockery::mock(ResolveInfo::class));
-        Assert::same(['id' => 1, 'name' => 'Test Entity'], $result);
-    }
+		$result = $this->resolver->queryById(null, ['id' => 1], null, Mockery::mock(ResolveInfo::class));
+		Assert::same(['id' => 1, 'name' => 'Test Entity'], $result);
+	}
 
-    public function testQueryByIdInvalidId(): void
-    {
-        $entityMock = Mockery::mock(\App\Model\Database\Entity\Book::class);
-        $entityMock->shouldReceive('toArray')->andReturn([]);
+	public function testQueryByIdInvalidId(): void
+	{
+		$entityMock = Mockery::mock(\App\Model\Database\Entity\Book::class);
+		$entityMock->shouldReceive('toArray')->andReturn([]);
 
-        $this->repositoryMock
-            ->shouldReceive('findById')
-            ->with(100)
-            ->andReturn($entityMock);
+		$this->repositoryMock
+			->shouldReceive('findById')
+			->with(100)
+			->andReturn($entityMock);
 
-        $result = $this->resolver->queryById(null, ['id' => 100], null, Mockery::mock(ResolveInfo::class));
+		$result = $this->resolver->queryById(null, ['id' => 100], null, Mockery::mock(ResolveInfo::class));
 
-        Assert::same([], $result);
-    }
-    public function testQueryByIdInvalidIdType(): void
-    {
-        $this->repositoryMock
-            ->shouldReceive('findById')
-            ->with(1)
-            ->andThrow(new InvalidArgumentException());
+		Assert::same([], $result);
+	}
 
-        Assert::exception(function () {
-            $this->resolver->queryById(null, ['id' => 'asdf'], null, Mockery::mock(ResolveInfo::class));
-        }, InvalidArgumentException::class);
-    }
+	public function testQueryByIdInvalidIdType(): void
+	{
+		$this->repositoryMock
+			->shouldReceive('findById')
+			->with(1)
+			->andThrow(new InvalidArgumentException());
 
-    public function testQueryAllReturnsEntities(): void
-    {
-        $entityMock1 = Mockery::mock(BaseEntity::class);
-        $entityMock1->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Entity 1']);
+		Assert::exception(function () {
+			$this->resolver->queryById(null, ['id' => 'asdf'], null, Mockery::mock(ResolveInfo::class));
+		}, InvalidArgumentException::class);
+	}
 
-        $entityMock2 = Mockery::mock(BaseEntity::class);
-        $entityMock2->shouldReceive('toArray')->andReturn(['id' => 2, 'name' => 'Entity 2']);
+	public function testQueryAllReturnsEntities(): void
+	{
+		$entityMock1 = Mockery::mock(BaseEntity::class);
+		$entityMock1->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Entity 1']);
 
-        $this->repositoryMock
-            ->shouldReceive('findAll')
-            ->andReturn([$entityMock1, $entityMock2]);
+		$entityMock2 = Mockery::mock(BaseEntity::class);
+		$entityMock2->shouldReceive('toArray')->andReturn(['id' => 2, 'name' => 'Entity 2']);
 
-        $result = $this->resolver->queryAll(null, [], null, Mockery::mock(ResolveInfo::class));
+		$this->repositoryMock
+			->shouldReceive('findAll')
+			->andReturn([$entityMock1, $entityMock2]);
 
-        Assert::same([
-            ['id' => 1, 'name' => 'Entity 1'],
-            ['id' => 2, 'name' => 'Entity 2']
-        ], $result);
-    }
+		$result = $this->resolver->queryAll(null, [], null, Mockery::mock(ResolveInfo::class));
 
-    public function testQueryByIdsReturnsEntities(): void
-    {
-        $entityMock = Mockery::mock(BaseEntity::class);
-        $entityMock->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Entity 1']);
+		Assert::same([
+			['id' => 1, 'name' => 'Entity 1'],
+			['id' => 2, 'name' => 'Entity 2'],
+		], $result);
+	}
 
-        $this->repositoryMock
-            ->shouldReceive('findByIds')
-            ->with([1])
-            ->andReturn([$entityMock]);
+	public function testQueryByIdsReturnsEntities(): void
+	{
+		$entityMock = Mockery::mock(BaseEntity::class);
+		$entityMock->shouldReceive('toArray')->andReturn(['id' => 1, 'name' => 'Entity 1']);
 
-        $result = $this->resolver->queryByIds(null, ['ids' => [1]], null, Mockery::mock(ResolveInfo::class));
+		$this->repositoryMock
+			->shouldReceive('findByIds')
+			->with([1])
+			->andReturn([$entityMock]);
 
-        Assert::same([['id' => 1, 'name' => 'Entity 1']], $result);
-    }
+		$result = $this->resolver->queryByIds(null, ['ids' => [1]], null, Mockery::mock(ResolveInfo::class));
 
-    public function testQueryByIdsNoEntitiesFound(): void
-    {
-        $this->repositoryMock
-            ->shouldReceive('findByIds')
-            ->with([1])
-            ->andReturn([]);
+		Assert::same([['id' => 1, 'name' => 'Entity 1']], $result);
+	}
 
-        $result = $this->resolver->queryByIds(null, ['ids' => [1]], null, Mockery::mock(ResolveInfo::class));
+	public function testQueryByIdsNoEntitiesFound(): void
+	{
+		$this->repositoryMock
+			->shouldReceive('findByIds')
+			->with([1])
+			->andReturn([]);
 
-        Assert::same([], $result);
-    }
+		$result = $this->resolver->queryByIds(null, ['ids' => [1]], null, Mockery::mock(ResolveInfo::class));
+
+		Assert::same([], $result);
+	}
 }
 
 (new BaseResolverTest())->run();

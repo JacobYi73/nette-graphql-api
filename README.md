@@ -37,7 +37,7 @@ This Nette-based project provides an API interface via GraphQL for managing data
    Copy configuration templates and set parameters as needed:
    ```bash
    cp .env.template .env
-   cp app/config/local.neon.template app/config/local.neon
+   cp config/local.neon.template config/local.neon
    ```
 
 4. **Start Containers**:
@@ -61,6 +61,24 @@ OR
 Commands `php` and `composer` inside the container are aliased to use UID and GID from .env file so they have same privileges on generated files as php-fpm called by webserver for development.
 
 You need to do this to work with [Database](#database) and [Testing](#testing) accordingly.
+
+## Database
+
+### Entity Definition
+
+Doctrine entities are defined using PHP 8 attributes. Types are automatically determined by property types, except for custom enum types.
+
+### Migrations
+
+To manage migrations:
+
+```bash
+php bin/console.php nette:cache:purge
+php bin/console.php migrations:migrate
+php bin/console.php migrations:diff
+```
+
+Ensure no pending or missing migrations are flagged by `migrations:diff` to avoid potential conflicts during merges.
 
 ## GraphQL API Usage
 
@@ -192,24 +210,6 @@ The following commands ensure code quality:
 
 - **Static Analysis**: `composer phpstan`
 - **Unit tests**: `composer tester`
-
-## Database
-
-### Entity Definition
-
-Doctrine entities are defined using PHP 8 attributes. Types are automatically determined by property types, except for custom enum types.
-
-### Migrations
-
-To manage migrations:
-
-```bash
-php bin/console.php nette:cache:purge
-php bin/console.php migrations:migrate
-php bin/console.php migrations:diff
-```
-
-Ensure no pending or missing migrations are flagged by `migrations:diff` to avoid potential conflicts during merges.
 
 ## Production
 

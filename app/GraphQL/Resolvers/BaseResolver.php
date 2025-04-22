@@ -16,89 +16,113 @@ use GraphQL\Type\Definition\ResolveInfo;
  */
 abstract class BaseResolver
 {
-    /**
-     * @var T
-     */
-    protected $repository;
+	/**
+	 * @var T
+	 */
+	protected $repository;
 
-    protected EntityManager $entityManager;
-    protected GraphqlConfig $graphqlConfig;
+	protected EntityManager $entityManager;
+	protected GraphqlConfig $graphqlConfig;
 
-    /**
-     * @param T $repository
-     */
-    public function __construct(mixed $repository, GraphqlConfig $graphqlConfig)
-    {
-        $this->repository = $repository;
-        $this->graphqlConfig = $graphqlConfig;
-    }
+	/**
+	 * @param T $repository
+	 */
+	public function __construct(mixed $repository, GraphqlConfig $graphqlConfig)
+	{
+		$this->repository = $repository;
+		$this->graphqlConfig = $graphqlConfig;
+	}
 
-    public function getDefaultLangId(): int
-    {
-        return $this->graphqlConfig->getDefaultLangId();
-    }
+	public function getDefaultLangId(): int
+	{
+		return $this->graphqlConfig->getDefaultLangId();
+	}
 
-    /**
-     * @param array<string, mixed> $args The arguments.
-     * @return array<string, mixed>|null The resolved value.
-     */
-    public function queryById(mixed $root, array $args, mixed $context, ResolveInfo $info): ?array
-    {
-        if (!isset($args['id']) || !is_int($args['id'])) {
-            throw new \InvalidArgumentException("Expected 'id' argument of type int.");
-        }
-        /**
-         * @var BaseEntity $entity
-         */
-        $entity = $this->repository->findById($args['id']);
+	/**
+	 * @param array<string, mixed> $args The arguments.
+	 * @return array<string, mixed>|null The resolved value.
+	 */
+	public function queryById(
+		mixed $root,
+		array $args,
+		mixed $context,
+		ResolveInfo $info,
+	): array|null {
+		if (!isset($args['id']) || !\is_int($args['id'])) {
+			throw new \InvalidArgumentException("Expected 'id' argument of type int.");
+		}
 
-        if (!($entity instanceof BaseEntity)) {
-            throw new EntityNotFoundException($this->repository->getEntityName(), $this->repository->getColumnName('id') . ' = ' . $args['id']);
-        }
-        return $entity->toArray();
-    }
+		/**
+		 * @var BaseEntity $entity
+		 */
+		$entity = $this->repository->findById($args['id']);
 
-    /**
-     * @param array<string, mixed> $args
-     * @return array<array<string, mixed>>
-     */
-    public function queryAll(mixed $root, array $args, mixed $context, ResolveInfo $info): array
-    {
-        $entites = $this->repository->findAll();
-        if (!is_array($entites)) {
-            throw new EntityNotFoundException($this->repository->getEntityName(), 'all records');
-        }
-        $result = [];
-        foreach ($entites as $key => $entity) {
-            if (!($entity instanceof BaseEntity)) {
-                throw new EntityNotFoundException($this->repository->getEntityName(), $this->repository->getColumnName('id') . ' = ' . $args['id']);
-            }
-            $result[$key] = $entity->toArray();
-        }
-        return $result;
-    }
+		if (!($entity instanceof BaseEntity)) {
+			throw new EntityNotFoundException($this->repository->getEntityName(), $this->repository->getColumnName('id') . ' = ' . $args['id']);
+		}
 
-    /**
-     * @param array<string, mixed> $args
-     * @return array<array<string, mixed>>
-     */
-    public function queryByIds(mixed $root, array $args, mixed $context, ResolveInfo $info): array
-    {
-        if (isset($args['ids']) && is_array($args['ids']) && sizeof($args['ids']) > 0) {
-            $entites = $this->repository->findByIds($args['ids']);
-            if (!is_array($entites)) {
-                throw new EntityNotFoundException($this->repository->getEntityName(), $this->repository->getColumnName('id') . ' in (' . implode(',', $args['ids']));
-            }
-            $result = [];
-            foreach ($entites as $key => $entity) {
-                if (!($entity instanceof BaseEntity)) {
-                    throw new EntityNotFoundException($this->repository->getEntityName(), $this->repository->getColumnName('id') . ' in (' . implode(',', $args['ids']));
-                }
-                $result[$key] = $entity->toArray();
-            }
-            return $result;
-        }
+		return $entity->toArray();
+	}
 
-        return [];
-    }
+	/**
+	 * @param array<string, mixed> $args
+	 * @return array<array<string, mixed>>
+	 */
+	public function queryAll(
+		mixed $root,
+		array $args,
+		mixed $context,
+		ResolveInfo $info,
+	): array {
+		$entites = $this->repository->findAll();
+
+		if (!\is_array($entites)) {
+			throw new EntityNotFoundException($this->repository->getEntityName(), 'all records');
+		}
+
+		$result = [];
+
+		foreach ($entites as $key => $entity) {
+			if (!($entity instanceof BaseEntity)) {
+				throw new EntityNotFoundException($this->repository->getEntityName(), $this->repository->getColumnName('id') . ' = ' . $args['id']);
+			}
+
+			$result[$key] = $entity->toArray();
+		}
+
+		return $result;
+	}
+
+	/**
+	 * @param array<string, mixed> $args
+	 * @return array<array<string, mixed>>
+	 */
+	public function queryByIds(
+		mixed $root,
+		array $args,
+		mixed $context,
+		ResolveInfo $info,
+	): array {
+		if (isset($args['ids']) && \is_array($args['ids']) && \sizeof($args['ids']) > 0) {
+			$entites = $this->repository->findByIds($args['ids']);
+
+			if (!\is_array($entites)) {
+				throw new EntityNotFoundException($this->repository->getEntityName(), $this->repository->getColumnName('id') . ' in (' . \implode(',', $args['ids']));
+			}
+
+			$result = [];
+
+			foreach ($entites as $key => $entity) {
+				if (!($entity instanceof BaseEntity)) {
+					throw new EntityNotFoundException($this->repository->getEntityName(), $this->repository->getColumnName('id') . ' in (' . \implode(',', $args['ids']));
+				}
+
+				$result[$key] = $entity->toArray();
+			}
+
+			return $result;
+		}
+
+		return [];
+	}
 }

@@ -10,131 +10,148 @@ use GraphQL\Utils\BuildSchema;
 
 class Schema
 {
-    private \Nette\DI\Container $container;
+	private \Nette\DI\Container $container;
 
-    public function __construct(\Nette\DI\Container $container)
-    {
-        $this->container = $container;
-    }
+	public function __construct(\Nette\DI\Container $container)
+	{
+		$this->container = $container;
+	}
 
-    /**
-     * @throws \Exception
-     */
-    public function build(string $userRole = 'admin'): GraphQLSchema
-    {
-        $SDL = $this->loadGraphQLSchemas($userRole);
+	/**
+	 * @throws \Exception
+	 */
+	public function build(string $userRole = 'admin'): GraphQLSchema
+	{
+		$SDL = $this->loadGraphQLSchemas($userRole);
 
-        $schemaAst = Parser::parse($SDL);
-        $parsedSchema = BuildSchema::build($schemaAst);
-        $queryType = $parsedSchema->getQueryType();
+		$schemaAst = Parser::parse($SDL);
+		$parsedSchema = BuildSchema::build($schemaAst);
+		$queryType = $parsedSchema->getQueryType();
 
-        $schemaSection = [];
-        if ($queryType === null) {
-            throw new \Exception("Query type is missing in the GraphQL schema.");
-        }
-        $schemaSection['query'] = $queryType;
+		$schemaSection = [];
 
-        $mutationType = $parsedSchema->getMutationType();
-        if ($mutationType !== null) {
-            $schemaSection['mutation'] = $mutationType;
-        }
+		if ($queryType === null) {
+			throw new \Exception('Query type is missing in the GraphQL schema.');
+		}
 
-        $this->assignResolvers($parsedSchema);
+		$schemaSection['query'] = $queryType;
 
-        return new GraphQLSchema($schemaSection);
-    }
+		$mutationType = $parsedSchema->getMutationType();
 
-    /**
-     * @throws \Exception
-     */
-    private function loadGraphQLSchemas(string $userRole = 'user'): string
-    {
-        $dir = __DIR__ . '/Types/';
-        $types = glob($dir . '*.graphql');
-        if ($types === false) {
-            throw new \Exception("Failed to read GraphQL types directory.");
-        }
+		if ($mutationType !== null) {
+			$schemaSection['mutation'] = $mutationType;
+		}
 
-        $dir = __DIR__ . '/Enums/';
-        $enums = glob($dir . '*.graphql');
-        if ($enums === false) {
-            throw new \Exception("Failed to read GraphQL Enums directory.");
-        }
+		$this->assignResolvers($parsedSchema);
 
-        $dir = __DIR__ . '/Schemas/';
-        $schemas = glob($dir . '*.graphql');
-        if ($schemas === false) {
-            throw new \Exception("Failed to read GraphQL schema directory.");
-        }
+		return new GraphQLSchema($schemaSection);
+	}
 
-        $dir = __DIR__ . '/Schemas/SchemaByRole/';
-        $root = glob($dir . $userRole . '.graphql');
-        if ($root === false) {
-            throw new \Exception("Failed to read GraphQL SchemaByRole directory.");
-        }
+	/**
+	 * @throws \Exception
+	 */
+	private function loadGraphQLSchemas(string $userRole = 'user'): string
+	{
+		$dir = __DIR__ . '/Types/';
+		$types = \glob($dir . '*.graphql');
 
-        $all = array_merge($enums, $types, $schemas, $root);
+		if ($types === false) {
+			throw new \Exception('Failed to read GraphQL types directory.');
+		}
 
-        $SDL = '';
-        foreach ($all as $schemaFile) {
-            $content = file_get_contents($schemaFile);
-            if ($content === false) {
-                throw new \Exception("Failed to read GraphQL schema file: " . basename($schemaFile));
-            }
-            $SDL .= $content;
-        }
-        return $SDL;
-    }
+		$dir = __DIR__ . '/Enums/';
+		$enums = \glob($dir . '*.graphql');
 
-    private function assignResolvers(GraphQLSchema $parsedSchema): void
-    {
-        $schemaTypeNames = ['Query', 'Mutation'];
+		if ($enums === false) {
+			throw new \Exception('Failed to read GraphQL Enums directory.');
+		}
 
-        foreach ($schemaTypeNames as $schemaTypeName) {
-            $prefix = strtolower($schemaTypeName);
+		$dir = __DIR__ . '/Schemas/';
+		$schemas = \glob($dir . '*.graphql');
 
-            switch ($prefix) {
-                case 'query':
-                    $schemaType = $parsedSchema->getQueryType();
-                    if (empty($schemaType)) {
-                        throw new \Exception(" GraphQL Schema Type {$schemaTypeName} not found.");
-                    }
-                    break;
-                case 'mutation':
-                    $schemaType = $parsedSchema->getMutationType();
-                    break;
-                default:
-                    throw new \Exception("Failed GraphQL Schema Type: " . $schemaTypeName);
-            }
+		if ($schemas === false) {
+			throw new \Exception('Failed to read GraphQL schema directory.');
+		}
 
-            if (empty($schemaType)) {
-                continue;
-            }
+		$dir = __DIR__ . '/Schemas/SchemaByRole/';
+		$root = \glob($dir . $userRole . '.graphql');
 
-            $fields = $schemaType->getFields();
-            if (!is_array($fields) || empty($fields)) {
-                throw new \Exception(" GraphQL Schema Type {$schemaTypeName} not found fields.");
-            }
+		if ($root === false) {
+			throw new \Exception('Failed to read GraphQL SchemaByRole directory.');
+		}
 
-            foreach (array_keys($parsedSchema->getTypeMap()) as $typeName) {
-                $resolverClassName = 'App\\GraphQL\\Resolvers\\' . ucfirst($typeName) . 'Resolver';
-                if (!class_exists($resolverClassName)) {
-                    continue;
-                }
+		$all = \array_merge($enums, $types, $schemas, $root);
 
-                $resolverInstance = $this->container->createInstance($resolverClassName);
+		$SDL = '';
 
-                foreach ($fields as $fieldName => $field) {
-                    $methodResolveName = str_replace($typeName, $prefix, $fieldName);
+		foreach ($all as $schemaFile) {
+			$content = \file_get_contents($schemaFile);
 
-                    if (!empty($methodResolveName) && method_exists($resolverInstance, $methodResolveName)) {
-                        $callable = [$resolverInstance, $methodResolveName];
-                        if (is_callable($callable)) {
-                            $field->resolveFn = $callable;
-                        }
-                    }
-                }
-            }
-        }
-    }
+			if ($content === false) {
+				throw new \Exception('Failed to read GraphQL schema file: ' . \basename($schemaFile));
+			}
+
+			$SDL .= $content;
+		}
+
+		return $SDL;
+	}
+
+	private function assignResolvers(GraphQLSchema $parsedSchema): void
+	{
+		$schemaTypeNames = ['Query', 'Mutation'];
+
+		foreach ($schemaTypeNames as $schemaTypeName) {
+			$prefix = \strtolower($schemaTypeName);
+
+			switch ($prefix) {
+				case 'query':
+					$schemaType = $parsedSchema->getQueryType();
+
+					if (empty($schemaType)) {
+						throw new \Exception('GraphQL Schema Type ' . $schemaTypeName . ' not found.');
+					}
+
+					break;
+				case 'mutation':
+					$schemaType = $parsedSchema->getMutationType();
+
+					break;
+				default:
+					throw new \Exception('Failed GraphQL Schema Type: ' . $schemaTypeName);
+			}
+
+			if (empty($schemaType)) {
+				continue;
+			}
+
+			$fields = $schemaType->getFields();
+
+			if (!\is_array($fields) || empty($fields)) {
+				throw new \Exception('GraphQL Schema Type ' . $schemaTypeName . ' not found fields.');
+			}
+
+			foreach (\array_keys($parsedSchema->getTypeMap()) as $typeName) {
+				$resolverClassName = 'App\\GraphQL\\Resolvers\\' . \ucfirst($typeName) . 'Resolver';
+
+				if (!\class_exists($resolverClassName)) {
+					continue;
+				}
+
+				$resolverInstance = $this->container->createInstance($resolverClassName);
+
+				foreach ($fields as $fieldName => $field) {
+					$methodResolveName = \str_replace($typeName, $prefix, $fieldName);
+
+					if (!empty($methodResolveName) && \method_exists($resolverInstance, $methodResolveName)) {
+						$callable = [$resolverInstance, $methodResolveName];
+
+						if (\is_callable($callable)) {
+							$field->resolveFn = $callable;
+						}
+					}
+				}
+			}
+		}
+	}
 }

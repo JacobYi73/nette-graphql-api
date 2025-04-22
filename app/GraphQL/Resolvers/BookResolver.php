@@ -16,89 +16,103 @@ use GraphQL\Type\Definition\ResolveInfo;
  */
 class BookResolver extends BaseResolver
 {
-    public function __construct(EntityManager $entityManager, GraphqlConfig $graphqlConfig)
-    {
-        $this->entityManager = $entityManager;
+	public function __construct(EntityManager $entityManager, GraphqlConfig $graphqlConfig)
+	{
+		$this->entityManager = $entityManager;
 
-        parent::__construct($this->entityManager->getBookRepository(), $graphqlConfig);
-    }
+		parent::__construct($this->entityManager->getBookRepository(), $graphqlConfig);
+	}
 
-    /**
-     * @param array<string, mixed> $args
-     * @return array<string, mixed>
-     */
-    public function mutationInsert(mixed $root, array $args, mixed $context, ResolveInfo $info): array
-    {
-        $entity = new Book();
-        $this->repository->setEntityData($entity, $this->getDefinitions(), $args);
-        $this->repository->persist($entity);
-        $this->repository->flush();
-        return $entity->toArray();    }
+	/**
+	 * @param array<string, mixed> $args
+	 * @return array<string, mixed>
+	 */
+	public function mutationInsert(
+		mixed $root,
+		array $args,
+		mixed $context,
+		ResolveInfo $info,
+	): array {
+		$entity = new Book();
+		$this->repository->setEntityData($entity, $this->getDefinitions(), $args);
+		$this->repository->persist($entity);
+		$this->repository->flush();
 
-    /**
-     * @param array<string, mixed> $args
-     * @return array<string, mixed>
-     */
-    public function mutationUpdate(mixed $root, array $args, mixed $context, ResolveInfo $info): array
-    {
-        if (!isset($args['id']) || !is_int($args['id'])) {
-            throw new \InvalidArgumentException("Expected 'id' argument of type int.");
-        }
+		return $entity->toArray();
+	}
 
-        $id = $args['id'];
+	/**
+	 * @param array<string, mixed> $args
+	 * @return array<string, mixed>
+	 */
+	public function mutationUpdate(
+		mixed $root,
+		array $args,
+		mixed $context,
+		ResolveInfo $info,
+	): array {
+		if (!isset($args['id']) || !\is_int($args['id'])) {
+			throw new \InvalidArgumentException("Expected 'id' argument of type int.");
+		}
 
-        $entity = $this->repository->findById($id);
+		$id = $args['id'];
 
-        if (!($entity instanceof Book)) {
-            throw new EntityNotFoundException("Book with id {$id}");
-        }
+		$entity = $this->repository->findById($id);
 
-        //set data
-        $this->repository->setEntityData($entity, $this->getDefinitions(), $args);
-        $this->repository->flush();
-        return $entity->toArray();
-    }
+		if (!($entity instanceof Book)) {
+			throw new EntityNotFoundException('Book with id ' . $id . ' not found.');
+		}
 
-    /**
-     * @param array<string, mixed> $args
-     * @return array<string, mixed>
-     */
-    public function mutationRemove(mixed $root, array $args, mixed $context, ResolveInfo $info): array
-    {
-        if (!isset($args['id']) || !is_int($args['id'])) {
-            throw new \InvalidArgumentException("Expected 'id' argument of type int.");
-        }
+		//set data
+		$this->repository->setEntityData($entity, $this->getDefinitions(), $args);
+		$this->repository->flush();
 
-        $id = $args['id'];
+		return $entity->toArray();
+	}
 
-        $entity = $this->repository->findById($id);
+	/**
+	 * @param array<string, mixed> $args
+	 * @return array<string, mixed>
+	 */
+	public function mutationRemove(
+		mixed $root,
+		array $args,
+		mixed $context,
+		ResolveInfo $info,
+	): array {
+		if (!isset($args['id']) || !\is_int($args['id'])) {
+			throw new \InvalidArgumentException("Expected 'id' argument of type int.");
+		}
 
-        if (!($entity instanceof Book)) {
-            throw new EntityNotFoundException("Book with id {$id}");
-        }
+		$id = $args['id'];
 
-        //store data only for response
-        $response = $entity->toArray();
+		$entity = $this->repository->findById($id);
 
-        //remove record
-        $this->repository->remove($entity);
-        $this->repository->flush();
+		if (!($entity instanceof Book)) {
+			throw new EntityNotFoundException('Book with id ' . $id . ' not found.');
+		}
 
-        return $response;
-    }
+		//store data only for response
+		$response = $entity->toArray();
 
+		//remove record
+		$this->repository->remove($entity);
+		$this->repository->flush();
 
-    /**
-     * @return array<string, array{callable(mixed): mixed, bool, object|null, string|null}>
-     */
-    private function getDefinitions(): array
-    {
-        return [
-            'name' => [fn($value) => is_string($value), false, null, null],
-            'author' => [fn($value) => is_string($value), false, null, null],
-            'releaseYear' => [fn($value) => is_int($value), false, null, null],
-            'genre' => [fn($value) => is_string($value), false, null, null],
-            'description' => [fn($value) => is_string($value), false, null, null],
-        ];
-    }
+		return $response;
+	}
+
+	/**
+	 * @return array<string, array{callable(mixed): mixed, bool, object|null, string|null}>
+	 */
+	private function getDefinitions(): array
+	{
+		return [
+			'name' => [fn ($value) => \is_string($value), false, null, null],
+			'author' => [fn ($value) => \is_string($value), false, null, null],
+			'releaseYear' => [fn ($value) => \is_int($value), false, null, null],
+			'genre' => [fn ($value) => \is_string($value), false, null, null],
+			'description' => [fn ($value) => \is_string($value), false, null, null],
+		];
+	}
 }

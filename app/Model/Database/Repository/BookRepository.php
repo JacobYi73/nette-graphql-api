@@ -13,27 +13,32 @@ use Doctrine\ORM\Mapping\ClassMetadata;
  */
 class BookRepository extends BaseRepository
 {
-    public function findById(int $id, bool $isMandatory = true): ?Book
-    {
+	public function findById(int $id, bool $isMandatory = true): Book|null
+	{
 
-        $entity = $this->findOneBy(["id" => $id]);
-        if ($isMandatory && ($entity === null || !($entity instanceof Book))) {
-            throw new EntityNotFoundException($this->getClassName(), "findById");
-        }
-        if ($isMandatory) {
-            assert($entity instanceof Book);
-        }
-        return $entity;
-    }
+		$entity = $this->findOneBy(['id' => $id]);
 
-    public function findByName(int $name): ?Book
-    {
-        $entity = $this->findOneBy(["name" => $name]);
-        if ($entity === null || !($entity instanceof Book)) {
-            throw new EntityNotFoundException($this->getClassName(), "findByName");
-        }
-        assert($entity instanceof Book);
+		if ($isMandatory && ($entity === null || !($entity instanceof Book))) {
+			throw new EntityNotFoundException($this->getClassName(), 'findById');
+		}
 
-        return $entity;
-    }
+		if ($isMandatory) {
+			\assert($entity instanceof Book);
+		}
+
+		return $entity;
+	}
+
+	public function findByName(int $name): Book|null
+	{
+		$entity = $this->findOneBy(['name' => $name]);
+
+		if ($entity === null || !($entity instanceof Book)) {
+			throw new EntityNotFoundException($this->getClassName(), 'findByName');
+		}
+
+		\assert($entity instanceof Book);
+
+		return $entity;
+	}
 }
